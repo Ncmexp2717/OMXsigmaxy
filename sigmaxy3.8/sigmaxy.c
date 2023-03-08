@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     printf(" redistribute it under the constitution of the GNU-GPL.\n");
     printf(" Please cite the following article:\n");
     printf(" H. Sawahata, N. Yamaguchi, S. Minami and F. Ishii,\n");
-    printf(" Phys. Rev. B 107, 024404 (2023).\n");
+    printf(" arXiv:2204.05949 (2022).\n");
     printf(
         "******************************************************************\n");
     printf(
@@ -762,7 +762,7 @@ int main(int argc, char *argv[]) {
 
     for (i = 0; i < EnergyMesh; i++) {
       sigmaxySum[i] /= (double)Nk[n1];
-      sigmaxySum[i] = - sigmaxySum[i] * e2parh / norm * 1.0e+8; /* S / cm */
+      sigmaxySum[i] = sigmaxySum[i] * e2parh / norm * 1.0e+8; /* S / cm */
       sigmaxy[DirectionLoop][i] = sigmaxySum[i];
     }
 

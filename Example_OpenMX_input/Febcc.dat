@@ -24,7 +24,7 @@ Definition.of.Atomic.Species>
 Atoms.Number         1
 Atoms.SpeciesAndCoordinates.Unit   FRAC  # Ang|AU
 <Atoms.SpeciesAndCoordinates           
- 1  Fe  0.0000    0.0000    0.0000     6.0 8.0
+ 1  Fe  0.0000    0.0000    0.0000     8.0 6.0
 Atoms.SpeciesAndCoordinates>
 
 Atoms.UnitVectors.Unit             Ang # Ang|AU
