@@ -24,7 +24,7 @@ Definition.of.Atomic.Species>
 Atoms.Number         3
 Atoms.SpeciesAndCoordinates.Unit   FRAC # Ang|AU
 <Atoms.SpeciesAndCoordinates           
-1     Fe    0.000000000         0.000000000         0.000000000     8.0    6.0   0.0 0.0 0.0 0.0 1
+1     Fe    0.000000000         0.000000000         0.000000000     6.0    8.0   0.0 0.0 0.0 0.0 1
 2     Cl    0.333330026         0.666670065         0.079930000     3.5    3.5   0.0 0.0 0.0 0.0 1
 3     Cl    0.666670044         0.333330002         0.920069993     3.5    3.5   0.0 0.0 0.0 0.0 1
 Atoms.SpeciesAndCoordinates>
