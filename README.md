@@ -4,7 +4,7 @@ This is a post-processing code for computing anomalous Hall conductivity in [Ope
 This code can compute the metallic system efficiently, so this is suitable for thermoelectric material design based on the high-throughput first-principles screening.
 
 Please cite the following article:
-- Hikaru Sawahata, Naoya Yamaguchi, Susumu Minami, and Fumiyuki Ishii, First-principles calculation of anomalous Hall and Nernst conductivity by local Berry phase, [arXiv:2204.05949](https://arxiv.org/abs/2204.05949) (2022).
+- Hikaru Sawahata, Naoya Yamaguchi, Susumu Minami, and Fumiyuki Ishii, First-principles calculation of anomalous Hall and Nernst conductivity by local Berry phase, [Phys. Rev. B. **107**, 024404 (2023).](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.024404)
 
 # Installation (how to make)
 
@@ -63,3 +63,6 @@ For example, in Febcc case,
 this code compute a chemical potential dependence of 
 \sigma_{xy} -0.5 eV to 0.5 eV
 (energy mesh number is 400 and descritized integration mesh is 100\*100\*100).
+
+# Contact
+Please raise an issue or send a e-mail to sawahata@cphys.s.kanazawa-u.ac.jp.
