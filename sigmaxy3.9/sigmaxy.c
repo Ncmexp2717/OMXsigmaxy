@@ -102,12 +102,23 @@ void Calc_OverlapSopk1234(double k1[4], double k2[4], double k3[4],
                           dcomplex ***Sop41, int spinsize, int fsize,
                           int fsize2, int fsize3, int fsize4, int *MP);
 
+/* Disabled by N. Yamaguchi ***
 void Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
                     double FermiEnergy, double ChemP, int fsize2,
                     double **EigenVal1, double **EigenVal2, double **EigenVal3,
                     double **EigenVal4, dcomplex ***Sop12, dcomplex ***Sop23,
                     dcomplex ***Sop34, dcomplex ***Sop41, dcomplex *work1,
                     dcomplex *work2, dcomplex Cdet[2], INTEGER *ipiv);
+* ***/
+
+/* Added by N. Yamaguchi ***/
+int Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
+                    double FermiEnergy, double ChemP, int fsize2,
+                    double **EigenVal1, double **EigenVal2, double **EigenVal3,
+                    double **EigenVal4, dcomplex ***Sop12, dcomplex ***Sop23,
+                    dcomplex ***Sop34, dcomplex ***Sop41, dcomplex *work1,
+                    dcomplex *work2, dcomplex Cdet[2], INTEGER *ipiv);
+/* ***/
 
 static void Eigen_HH(dcomplex **ac, double *ko, int n, int EVmax);
 static void lapack_dstevx2(INTEGER N, double *D, double *E, double *W,
@@ -583,8 +594,15 @@ int main(int argc, char *argv[]) {
 
     int ABNumprocs;
 
+    /* Disabled by N. Yamaguchi ***
     int Summesh = Nk[n3] * Nk[n2];
+    * ***/
 
+    /* Added by N. Yamaguchi ***/
+    int Summesh=Nk[n3]*Nk[n2]*Nk[n1];
+    /* ***/
+
+    /* Disabled by N. Yamaguchi ***
     double ***BerryC;
     BerryC = (double ***)malloc(sizeof(double **) * EnergyMesh);
     for (k = 0; k < EnergyMesh; k++) {
@@ -596,6 +614,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+    * ***/
 
     /* for MPI */
 
@@ -611,10 +630,19 @@ int main(int argc, char *argv[]) {
 
     BerryCproc = (double **)malloc(sizeof(double *) * EnergyMesh);
     for (i = 0; i < EnergyMesh; i++) {
+
+      /* Disabled by N. Yamaguchi ***
       BerryCproc[i] = (double *)malloc(sizeof(double) * ABNumprocs);
       for (j = 0; j < ABNumprocs; j++) {
         BerryCproc[i][j] = 0.0;
       }
+      * ***/
+
+      /* Added by N. Yamaguchi ***/
+      BerryCproc[i]=(double*)malloc(sizeof(double)*1); 
+      BerryCproc[i][0]=0.0;
+      /* ***/
+
     }
 
     norm = sqrt(tv[n1][1] * tv[n1][1] + tv[n1][2] * tv[n1][2] +
@@ -633,6 +661,27 @@ int main(int argc, char *argv[]) {
     for (direction = 0; direction < 4; direction++) {
       expOLP_HWF[direction] = memoryAllocation_dcomplex(expOLP_HWF[direction]);
     }
+
+    /* Modified by N. Yamaguchi ***/
+    if ( n1 == 3 ){
+      setexpOLP(1.0/Nk[1], 0.0, 0.0, 1, expOLP_HWF[0]);
+      setexpOLP(0.0, 1.0/Nk[2], 0.0, 1, expOLP_HWF[1]);
+      setexpOLP(-1.0/Nk[1], 0.0, 0.0, 1, expOLP_HWF[2]);
+      setexpOLP(0.0, -1.0/Nk[2], 0.0, 1, expOLP_HWF[3]);
+    } 
+    else if ( n1 == 2 ){
+      setexpOLP(0.0, 0.0, 1.0/Nk[3], 1, expOLP_HWF[0]);
+      setexpOLP(1.0/Nk[1], 0.0, 0.0, 1, expOLP_HWF[1]);
+      setexpOLP(0.0, 0.0, -1.0/Nk[3], 1, expOLP_HWF[2]);
+      setexpOLP(-1.0/Nk[1], 0.0, 0.0, 1, expOLP_HWF[3]);
+    } 
+    else {
+      setexpOLP(0.0, 1.0/Nk[2], 0.0, 1, expOLP_HWF[0]);
+      setexpOLP(0.0, 0.0, 1.0/Nk[3], 1, expOLP_HWF[1]);
+      setexpOLP(0.0, -1.0/Nk[2], 0.0, 1, expOLP_HWF[2]);
+      setexpOLP(0.0, 0.0, -1.0/Nk[3], 1, expOLP_HWF[3]);
+    }
+    /* ***/
 
     /* make  k-point */
 
@@ -653,8 +702,17 @@ int main(int argc, char *argv[]) {
     /* Counting refinement plaquette                     */
     /*****************************************************/
 
+    /* Added by N. Yamaguchi ***/
+#if 0
+    /* ***/
+
     /* k3 direction's loop */
     for (i3 = 0; i3 < Nk[n1]; i3++) {
+
+      /* Added by N. Yamaguchi ***/
+#endif
+      /* ***/
+
       /* Parallelization k1 k2 */
       ABloop = 0;
 
@@ -671,7 +729,8 @@ int main(int argc, char *argv[]) {
       /* Parallelization */
       for (AB_knum = AB_knum0; AB_knum < AB_knum0 + ABNumprocs; AB_knum++) {
 
-        /* Modified by N. Yamaguchi ***/
+        /* Disabled by N. Yamaguchi ***
+         * Modified by N. Yamaguchi *
         if (n1 == 3) {
           i1 = AB_knum % mesh1;
           i2 = AB_knum / mesh1;
@@ -682,6 +741,24 @@ int main(int argc, char *argv[]) {
           i1 = AB_knum % mesh2;
           i2 = AB_knum / mesh2;
         }
+	* ***/
+
+	/* Added by N. Yamaguchi ***/
+	int ABC_index=numprocs*ABloop+myid;
+	if (n1==3){
+          i3=ABC_index/(mesh1*mesh2);
+          i2=(ABC_index)/mesh1-i3*mesh2;
+          i1=ABC_index%mesh1;
+	} else if (n1==2){
+          i3=ABC_index/(mesh3*mesh1);
+          i2=(ABC_index)/mesh3-i3*mesh1;
+          i1=ABC_index%mesh3;
+	} else if (n1==1){
+          i3=ABC_index/(mesh2*mesh3);
+          i2=(ABC_index)/mesh2-i3*mesh3;
+          i1=ABC_index%mesh2;
+	}
+	/* ***/
 
         /* make k-point k1,k2,k3,k4 = kg[x,y,z][meshNumber] */
         k1[n2] = kg[n2][i1];
@@ -700,7 +777,8 @@ int main(int argc, char *argv[]) {
         k4[n3] = kg[n3][i2 + 1];
         k4[n1] = kg[n1][i3];
 
-        /* Modified by N. Yamaguchi */
+        /* Disabled by N. Yamaguchi ***
+        * Modified by N. Yamaguchi *
         if (n1 == 3) {
           setexpOLP(1.0 / Nk[1], 0.0, 0.0, 1, expOLP_HWF[0]);
           setexpOLP(0.0, 1.0 / Nk[2], 0.0, 1, expOLP_HWF[1]);
@@ -717,11 +795,19 @@ int main(int argc, char *argv[]) {
           setexpOLP(0.0, -1.0 / Nk[2], 0.0, 1, expOLP_HWF[2]);
           setexpOLP(0.0, 0.0, -1.0 / Nk[3], 1, expOLP_HWF[3]);
         }
+	 * ***/
 
+	/* Disabled by N. Yamaguchi ***
         if (myid == Host_ID)
           printf("Calculate Sop......... %d / %d\n",
                  ABloop + 1 + i3 * ABNumprocs, ABNumprocs * Nk[n1]);
+	* ***/
 
+
+	/* Added by N. Yamaguchi ***/
+        if (myid == Host_ID){
+          printf("Calculate Sop......... %d / %d\n", ABloop, ABNumprocs);
+	}
         /* Added by N. Yamaguchi ***/
         EigenVal4[0][0] = Ehigh / HartreeEV + ChemP;
         /* ***/
@@ -736,6 +822,10 @@ int main(int argc, char *argv[]) {
         fsize4 = MP[0];
         /* ***/
 
+	/* Added by N. Yamaguchi ***/
+#if 0
+        /* ***/
+
         FermiEnergy = Elow;
         for (Ecount = 0; Ecount < EnergyMesh; Ecount++) {
           Calc_BerryCEps(BerryCproc, ABloop, Ecount, FermiEnergy, ChemP, fsize2,
@@ -744,9 +834,35 @@ int main(int argc, char *argv[]) {
           sigmaxyProc[Ecount] += 0.5 * BerryCproc[Ecount][ABloop] / PI;
           FermiEnergy += Eunit;
         } /* Energy Loop */
+
+	/* Added by N. Yamaguchi ***/
+#endif
+        /* ***/
+
+	/* Added by N. Yamaguchi ***/
+        FermiEnergy = Elow;
+        /* ***/
+
+	/* Modified by N. Yamaguchi ***/
+        Calc_BerryCEps( BerryCproc, 0, fsize4, FermiEnergy, ChemP, fsize2, EigenVal1, EigenVal2, EigenVal3, EigenVal4, Sop12, Sop23, Sop34, Sop41, work1, work2, Cdet, ipiv);
+        for ( Ecount = 0; Ecount < EnergyMesh; Ecount++){
+          Calc_BerryCEps( BerryCproc, 0, Ecount, FermiEnergy, ChemP, fsize2, EigenVal1, EigenVal2, EigenVal3, EigenVal4, Sop12, Sop23, Sop34, Sop41, work1, NULL, Cdet, NULL);
+          sigmaxyProc[Ecount]+=0.5*BerryCproc[Ecount][0]/PI;
+          FermiEnergy+=Eunit;
+        }
+	/* ***/
         ABloop++;
       } /* AB_knum */
+
+      /* Added by N. Yamaguchi ***/
+#if 0
+      /* ***/
+
     }   /*  i3   */
+
+      /* Added by N. Yamaguchi ***/
+#endif
+      /* ***/
 
     MPI_Barrier(comm1);
 
@@ -758,7 +874,10 @@ int main(int argc, char *argv[]) {
     /*************************************************/
     /* Output Results                                */
     /*************************************************/
+
+    /* Disabled by N. Yamaguchi ***
     MPI_Barrier(comm1);
+    * ***/
 
     for (i = 0; i < EnergyMesh; i++) {
       sigmaxySum[i] /= (double)Nk[n1];
@@ -771,6 +890,7 @@ int main(int argc, char *argv[]) {
     }
     free(BerryCproc);
 
+    /* Disabled by N. Yamaguchi ***
     for (i = 0; i < EnergyMesh; i++) {
       for (j = 0; j < Nk[n3]; j++) {
         free(BerryC[i][j]);
@@ -778,6 +898,7 @@ int main(int argc, char *argv[]) {
       free(BerryC[i]);
     }
     free(BerryC);
+    * ***/
 
     /* Added by N. Yamaguchi ***/
     for (direction = 0; direction < 4; direction++) {
@@ -1054,7 +1175,9 @@ void Calc_OverlapSopk1234(double k1[4], double k2[4], double k3[4],
   /* ***/
 }
 
-void Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
+/* Modified by N. Yamaguchi ***/
+int Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
+  /* ***/
                     double FermiEnergy, double ChemP, int fsize2,
                     double **EigenVal1, double **EigenVal2, double **EigenVal3,
                     double **EigenVal4, dcomplex ***Sop12, dcomplex ***Sop23,
@@ -1071,6 +1194,159 @@ void Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
     Bandcount[k] = 0;
   }
 
+  /* Added by N. Yamaguchi ***/
+  if (work2!=NULL && ipiv!=NULL){
+    int i, j, k;
+    dcomplex *Cdets12=(dcomplex*)malloc(sizeof(dcomplex)*Ecount);
+    dcomplex *Cdets23=(dcomplex*)malloc(sizeof(dcomplex)*Ecount);
+    dcomplex *Cdets34=(dcomplex*)malloc(sizeof(dcomplex)*Ecount);
+    dcomplex *Cdets41=(dcomplex*)malloc(sizeof(dcomplex)*Ecount);
+    //determinant(0, Ecount, Sop12[0], ipiv, work1, work2, Cdet);
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<Ecount; j++){
+        work1[i*Ecount+j]=Sop12[0][i][j];
+      }
+    }
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<=i; j++){
+	for (k=0; k<j; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+      }
+      for (j=i+1; j<Ecount; j++){
+	for (k=0; k<i; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+	double normInv=1.0/(work1[i*Ecount+i].r*work1[i*Ecount+i].r+work1[i*Ecount+i].i*work1[i*Ecount+i].i);
+        double tmpr=(work1[i*Ecount+j].r*work1[i*Ecount+i].r+work1[i*Ecount+j].i*work1[i*Ecount+i].i)*normInv;
+        double tmpi=(work1[i*Ecount+j].i*work1[i*Ecount+i].r-work1[i*Ecount+j].r*work1[i*Ecount+i].i)*normInv;
+	work1[i*Ecount+j].r=tmpr;
+	work1[i*Ecount+j].i=tmpi;
+      }
+    }
+    U12.r = 1.0;
+    U12.i = 0.0;
+    for (i=0; i<Ecount; i++){
+      dcomplex Ctmp = U12;
+      U12.r = Ctmp.r*work1[i*Ecount+i].r - Ctmp.i*work1[i*Ecount+i].i;
+      U12.i = Ctmp.r*work1[i*Ecount+i].i + Ctmp.i*work1[i*Ecount+i].r;
+      Cdets12[i]=U12;
+    }
+    //determinant(0, Ecount, Sop23[0], ipiv, work1, work2, Cdet);
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<Ecount; j++){
+        work1[i*Ecount+j]=Sop23[0][i][j];
+      }
+    }
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<=i; j++){
+	for (k=0; k<j; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+      }
+      for (j=i+1; j<Ecount; j++){
+	for (k=0; k<i; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+	double normInv=1.0/(work1[i*Ecount+i].r*work1[i*Ecount+i].r+work1[i*Ecount+i].i*work1[i*Ecount+i].i);
+        double tmpr=(work1[i*Ecount+j].r*work1[i*Ecount+i].r+work1[i*Ecount+j].i*work1[i*Ecount+i].i)*normInv;
+        double tmpi=(work1[i*Ecount+j].i*work1[i*Ecount+i].r-work1[i*Ecount+j].r*work1[i*Ecount+i].i)*normInv;
+	work1[i*Ecount+j].r=tmpr;
+	work1[i*Ecount+j].i=tmpi;
+      }
+    }
+    U23.r = 1.0;
+    U23.i = 0.0;
+    for (i=0; i<Ecount; i++){
+      dcomplex Ctmp = U23;
+      U23.r = Ctmp.r*work1[i*Ecount+i].r - Ctmp.i*work1[i*Ecount+i].i;
+      U23.i = Ctmp.r*work1[i*Ecount+i].i + Ctmp.i*work1[i*Ecount+i].r;
+      Cdets23[i]=U23;
+    }
+    //determinant(0, Ecount, Sop34[0], ipiv, work1, work2, Cdet);
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<Ecount; j++){
+        work1[i*Ecount+j]=Sop34[0][i][j];
+      }
+    }
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<=i; j++){
+	for (k=0; k<j; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+      }
+      for (j=i+1; j<Ecount; j++){
+	for (k=0; k<i; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+	double normInv=1.0/(work1[i*Ecount+i].r*work1[i*Ecount+i].r+work1[i*Ecount+i].i*work1[i*Ecount+i].i);
+        double tmpr=(work1[i*Ecount+j].r*work1[i*Ecount+i].r+work1[i*Ecount+j].i*work1[i*Ecount+i].i)*normInv;
+        double tmpi=(work1[i*Ecount+j].i*work1[i*Ecount+i].r-work1[i*Ecount+j].r*work1[i*Ecount+i].i)*normInv;
+	work1[i*Ecount+j].r=tmpr;
+	work1[i*Ecount+j].i=tmpi;
+      }
+    }
+    U34.r = 1.0;
+    U34.i = 0.0;
+    for (i=0; i<Ecount; i++){
+      dcomplex Ctmp = U34;
+      U34.r = Ctmp.r*work1[i*Ecount+i].r - Ctmp.i*work1[i*Ecount+i].i;
+      U34.i = Ctmp.r*work1[i*Ecount+i].i + Ctmp.i*work1[i*Ecount+i].r;
+      Cdets34[i]=U34;
+    }
+    //determinant(0, Ecount, Sop41[0], ipiv, work1, work2, Cdet);
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<Ecount; j++){
+        work1[i*Ecount+j]=Sop41[0][i][j];
+      }
+    }
+    for (i=0; i<Ecount; i++){
+      for (j=0; j<=i; j++){
+	for (k=0; k<j; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+      }
+      for (j=i+1; j<Ecount; j++){
+	for (k=0; k<i; k++){
+          work1[i*Ecount+j].r-=work1[i*Ecount+k].r*work1[k*Ecount+j].r-work1[i*Ecount+k].i*work1[k*Ecount+j].i;
+          work1[i*Ecount+j].i-=work1[i*Ecount+k].i*work1[k*Ecount+j].r+work1[i*Ecount+k].r*work1[k*Ecount+j].i;
+	}
+	double normInv=1.0/(work1[i*Ecount+i].r*work1[i*Ecount+i].r+work1[i*Ecount+i].i*work1[i*Ecount+i].i);
+        double tmpr=(work1[i*Ecount+j].r*work1[i*Ecount+i].r+work1[i*Ecount+j].i*work1[i*Ecount+i].i)*normInv;
+        double tmpi=(work1[i*Ecount+j].i*work1[i*Ecount+i].r-work1[i*Ecount+j].r*work1[i*Ecount+i].i)*normInv;
+	work1[i*Ecount+j].r=tmpr;
+	work1[i*Ecount+j].i=tmpi;
+      }
+    }
+    U41.r = 1.0;
+    U41.i = 0.0;
+    for (i=0; i<Ecount; i++){
+      dcomplex Ctmp = U41;
+      U41.r = Ctmp.r*work1[i*Ecount+i].r - Ctmp.i*work1[i*Ecount+i].i;
+      U41.i = Ctmp.r*work1[i*Ecount+i].i + Ctmp.i*work1[i*Ecount+i].r;
+      Cdets41[i]=U41;
+    }
+    for (i=0; i<Ecount; i++){
+      work1[i]=Cdets12[i];
+      work1[fsize2+i]=Cdets23[i];
+      work1[2*fsize2+i]=Cdets34[i];
+      work1[3*fsize2+i]=Cdets41[i];
+    }
+    free(Cdets12);
+    free(Cdets23);
+    free(Cdets34);
+    free(Cdets41);
+    return -1;
+  }
+  /* ***/
+
   for (k = 1; k <= fsize2; k++) {
     if (FermiEnergy > HartreeEV * (EigenVal1[0][k] - ChemP))
       Bandcount[1] += 1;
@@ -1082,46 +1358,42 @@ void Calc_BerryCEps(double **BerryCproc, int ABloop, int Ecount,
       Bandcount[4] += 1;
   }
 
-  /* Coumputing F(eps) by average method */
+  /* Computing F(eps) by average method */
   if (Bandcount[1] == Bandcount[2] && Bandcount[2] == Bandcount[3] &&
       Bandcount[3] == Bandcount[4] && Bandcount[1] != 0) {
     hog2 = Bandcount[1];
-    determinant(0, hog2, Sop12[0], ipiv, work1, work2, Cdet);
-    U12.r = Cdet[0].r;
-    U12.i = Cdet[0].i;
-    determinant(0, hog2, Sop23[0], ipiv, work1, work2, Cdet);
-    U23.r = Cdet[0].r;
-    U23.i = Cdet[0].i;
-    determinant(0, hog2, Sop34[0], ipiv, work1, work2, Cdet);
-    U34.r = Cdet[0].r;
-    U34.i = Cdet[0].i;
-    determinant(0, hog2, Sop41[0], ipiv, work1, work2, Cdet);
-    U41.r = Cdet[0].r;
-    U41.i = Cdet[0].i;
-    UUUU = Cmul(Cmul(U12, U23), Cmul(U34, U41));
-    BerryCproc[Ecount][ABloop] = atan2(UUUU.i, UUUU.r);
-  } else {
+
+    /* Modified by N. Yamaguchi ***/
+    U12=work1[hog2-1];
+    U23=work1[fsize2+hog2-1];
+    U34=work1[2*fsize2+hog2-1];
+    U41=work1[3*fsize2+hog2-1];
+    /* ***/
+
+    UUUU = Cmul(Cmul(U12,U23),Cmul(U34,U41));
+    BerryCproc[Ecount][ABloop]  = atan2(UUUU.i,UUUU.r);
+  }
+  else{
+    /* if ( Bandcount[1] != 0) LossCount[Ecount] += 1;*/
     /* Calculation Average */
-    BerryCproc[Ecount][ABloop] = 0.0;
-    for (k = 1; k <= 4; k++) {
-      if (Bandcount[k] != 0) {
+    RefinementFlag = 1;
+    BerryCproc[Ecount][ABloop]  = 0.0;
+    for ( k = 1; k <= 4; k++ ){
+      if ( Bandcount[k] != 0 ){
         hog2 = Bandcount[k];
-        determinant(0, hog2, Sop12[0], ipiv, work1, work2, Cdet);
-        U12.r = Cdet[0].r;
-        U12.i = Cdet[0].i;
-        determinant(0, hog2, Sop23[0], ipiv, work1, work2, Cdet);
-        U23.r = Cdet[0].r;
-        U23.i = Cdet[0].i;
-        determinant(0, hog2, Sop34[0], ipiv, work1, work2, Cdet);
-        U34.r = Cdet[0].r;
-        U34.i = Cdet[0].i;
-        determinant(0, hog2, Sop41[0], ipiv, work1, work2, Cdet);
-        U41.r = Cdet[0].r;
-        U41.i = Cdet[0].i;
-        UUUU = Cmul(Cmul(U12, U23), Cmul(U34, U41));
-        BerryCproc[Ecount][ABloop] += atan2(UUUU.i, UUUU.r);
-      } else {
-        BerryCproc[Ecount][ABloop] += 0.0;
+
+        /* Modified by N. Yamaguchi ***/
+        U12=work1[hog2-1];
+        U23=work1[fsize2+hog2-1];
+        U34=work1[2*fsize2+hog2-1];
+        U41=work1[3*fsize2+hog2-1];
+        /* ***/
+
+        UUUU  = Cmul(Cmul(U12,U23),Cmul(U34,U41));
+        BerryCproc[Ecount][ABloop]  += atan2(UUUU.i,UUUU.r);
+      }
+      else{
+        BerryCproc[Ecount][ABloop]  += 0.0;
       }
     }
     /* Average */
@@ -2415,6 +2687,7 @@ static void Overlap_k1k2(int diag_flag, double k1[4], double k2[4],
   }   /* ik */
 
   /* Added by N. Yamaguchi ***/
+  free(work);
   if (calcBandMax > 0 && calcBandMin > 0 && calcBandMax >= calcBandMin) {
     /* ***/
 
@@ -2520,7 +2793,6 @@ static void Overlap_k1k2(int diag_flag, double k1[4], double k2[4],
   free(matrix2);
   free(matrix3);
   free(rwork);
-  free(work);
   /* ***/
 }
 static void setexpOLP(double dka, double dkb, double dkc, int calcOrderMax,
